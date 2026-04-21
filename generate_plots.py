@@ -47,7 +47,50 @@ def generate_data(seed: int):
     return sensor_a, sensor_b, timestamps
 
 
+def plot_scatter(ax, timestamps, sensor_a, sensor_b):
+    """Plot two temperature time series on the provided Axes.
+
+    Parameters
+    ----------
+    ax : matplotlib.axes.Axes
+        The Axes object to modify in place.
+    timestamps : numpy.ndarray
+        1D array of time values (seconds).
+    sensor_a : numpy.ndarray
+        1D array of temperature values (°C) for sensor A.
+    sensor_b : numpy.ndarray
+        1D array of temperature values (°C) for sensor B.
+
+    Returns
+    -------
+    None
+        The function modifies ``ax`` in place and returns None.
+
+    Notes
+    -----
+    The function draws scatter plots for both sensors (blue and orange),
+    sets axis labels with units, adds a title and legend, and enables a grid.
+    """
+    # Plot sensor data
+    ax.scatter(timestamps, sensor_a, color='blue', label='Sensor A', s=20, alpha=0.8)
+    ax.scatter(timestamps, sensor_b, color='orange', label='Sensor B', s=20, alpha=0.8)
+
+    # Labels, title, legend, grid
+    ax.set_xlabel('Time (s)')
+    ax.set_ylabel('Temperature (°C)')
+    ax.set_title('Sensor Temperatures vs Time')
+    ax.legend()
+    ax.grid(True)
+
+    return None
+
+
 if __name__ == "__main__":
     # quick sanity check when run as a script
     a, b, ts = generate_data(1522)
-    print(f"sensor_a.shape={a.shape}, sensor_b.shape={b.shape}, timestamps.shape={ts.shape}")
+    import matplotlib.pyplot as plt
+
+    fig, ax = plt.subplots(figsize=(10, 4))
+    plot_scatter(ax, ts, a, b)
+    plt.tight_layout()
+    plt.show()
