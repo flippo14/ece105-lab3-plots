@@ -10,194 +10,131 @@ Usage
 """
 
 import numpy as np
+import matplotlib.pyplot as plt
 
 
-def generate_data(seed: int):
-    """Generate synthetic temperature time series for two sensors.
+def generate_data(seed):
+    """Generate synthetic temperature sensor readings.
 
     Parameters
     ----------
     seed : int
-        Random seed for reproducibility.
+        Random number generator seed for reproducibility.
 
     Returns
     -------
     sensor_a : numpy.ndarray
-        1D array of shape (200,) with float64 temperature values (°C)
-        for sensor A.
+        Temperature readings from sensor A in Celsius, shape (200,).
     sensor_b : numpy.ndarray
-        1D array of shape (200,) with float64 temperature values (°C)
-        for sensor B.
+        Temperature readings from sensor B in Celsius, shape (200,).
     timestamps : numpy.ndarray
-        1D array of shape (200,) with float64 timestamps sampled uniformly
-        between 0.0 and 10.0 seconds.
-
-    Notes
-    -----
-    The generated series are drawn from normal and uniform distributions
-    using a numpy.default_rng for reproducible, independent streams.
+        Measurement timestamps in seconds, shape (200,).
     """
-    rng = np.random.default_rng(seed)
-    n = 200
-    timestamps = rng.uniform(low=0.0, high=10.0, size=n).astype(np.float64)
-
-    sensor_a = rng.normal(loc=25.0, scale=3.0, size=n).astype(np.float64)
-    sensor_b = rng.normal(loc=27.0, scale=4.5, size=n).astype(np.float64)
-
+    rng = np.random.default_rng(seed=seed)
+    sensor_a = rng.normal(loc=25.0, scale=3.0, size=200)
+    sensor_b = rng.normal(loc=27.0, scale=4.5, size=200)
+    timestamps = rng.uniform(low=0.0, high=10.0, size=200)
     return sensor_a, sensor_b, timestamps
 
 
-def plot_scatter(ax, timestamps, sensor_a, sensor_b):
-    """Plot two temperature time series on the provided Axes.
+def plot_scatter(sensor_a, sensor_b, timestamps, ax):
+    """Draw a scatter plot of sensor readings vs timestamps.
 
     Parameters
     ----------
-    ax : matplotlib.axes.Axes
-        The Axes object to modify in place.
-    timestamps : numpy.ndarray
-        1D array of time values (seconds).
     sensor_a : numpy.ndarray
-        1D array of temperature values (°C) for sensor A.
+        Temperature readings from sensor A, shape (200,).
     sensor_b : numpy.ndarray
-        1D array of temperature values (°C) for sensor B.
+        Temperature readings from sensor B, shape (200,).
+    timestamps : numpy.ndarray
+        Measurement timestamps in seconds, shape (200,).
+    ax : matplotlib.axes.Axes
+        Axes object to draw the plot on.
 
     Returns
     -------
     None
-        The function modifies ``ax`` in place and returns None.
-
-    Notes
-    -----
-    The function draws scatter plots for both sensors (blue and orange),
-    sets axis labels with units, adds a title and legend, and enables a grid.
     """
-    # Plot sensor data
     ax.scatter(timestamps, sensor_a, color='blue', label='Sensor A', s=20, alpha=0.8)
     ax.scatter(timestamps, sensor_b, color='orange', label='Sensor B', s=20, alpha=0.8)
-
-    # Labels, title, legend, grid
     ax.set_xlabel('Time (s)')
     ax.set_ylabel('Temperature (°C)')
     ax.set_title('Sensor Temperatures vs Time')
     ax.legend()
     ax.grid(True)
 
-    return None
 
-
-def plot_histogram(ax, sensor_a, sensor_b, bins=30):
-    """Plot overlaid histograms of two sensor distributions on the provided Axes.
+def plot_histogram(sensor_a, sensor_b, ax):
+    """Draw overlaid histograms of sensor temperature distributions.
 
     Parameters
     ----------
-    ax : matplotlib.axes.Axes
-        The Axes object to modify in place.
     sensor_a : numpy.ndarray
-        1D array of temperature values (°C) for sensor A.
+        Temperature readings from sensor A, shape (200,).
     sensor_b : numpy.ndarray
-        1D array of temperature values (°C) for sensor B.
-    bins : int or sequence, optional
-        Number of bins (int) or bin edges (sequence). Default is 30.
+        Temperature readings from sensor B, shape (200,).
+    ax : matplotlib.axes.Axes
+        Axes object to draw the plot on.
 
     Returns
     -------
     None
-        The function modifies ``ax`` in place and returns None.
-
-    Notes
-    -----
-    Draws semi-transparent histograms for both sensors, computes and
-    marks each sensor's mean with a vertical dashed line, and adds a legend.
-    NaN values are ignored when computing extremes and means.
     """
-    # Determine bin edges that span both datasets, ignoring NaNs
-    valid_min = np.nanmin([np.nanmin(sensor_a), np.nanmin(sensor_b)])
-    valid_max = np.nanmax([np.nanmax(sensor_a), np.nanmax(sensor_b)])
-
-    if isinstance(bins, int):
-        bin_edges = np.linspace(valid_min, valid_max, bins + 1)
-    else:
-        bin_edges = bins
-
-    ax.hist(sensor_a, bins=bin_edges, alpha=0.5, color='blue', label='Sensor A')
-    ax.hist(sensor_b, bins=bin_edges, alpha=0.5, color='orange', label='Sensor B')
-
-    mean_a = np.nanmean(sensor_a)
-    mean_b = np.nanmean(sensor_b)
-    ax.axvline(mean_a, color='blue', linestyle='--', linewidth=1.5, label=f'Mean A ({mean_a:.2f}°C)')
-    ax.axvline(mean_b, color='orange', linestyle='--', linewidth=1.5, label=f'Mean B ({mean_b:.2f}°C)')
-
+    bins = np.linspace(min(sensor_a.min(), sensor_b.min()), max(sensor_a.max(), sensor_b.max()), 31)
+    ax.hist(sensor_a, bins=bins, alpha=0.5, color='blue', label='Sensor A')
+    ax.hist(sensor_b, bins=bins, alpha=0.5, color='orange', label='Sensor B')
+    ax.axvline(sensor_a.mean(), color='blue', linestyle='--', linewidth=1.5, label=f'Mean A ({sensor_a.mean():.2f}°C)')
+    ax.axvline(sensor_b.mean(), color='orange', linestyle='--', linewidth=1.5, label=f'Mean B ({sensor_b.mean():.2f}°C)')
     ax.set_xlabel('Temperature (°C)')
     ax.set_ylabel('Count')
     ax.set_title('Histogram of Sensor Temperatures')
     ax.legend()
     ax.grid(alpha=0.3)
 
-    return None
 
-
-def main(seed: int = 1522, out_dir: str = '.'):
-    """Generate data and produce the three plot PNG files.
+def plot_boxplot(sensor_a, sensor_b, ax):
+    """Draw a side-by-side box plot of sensor temperature distributions.
 
     Parameters
     ----------
-    seed : int, optional
-        Random seed passed to :func:`generate_data` for reproducibility
-        (default is 1522).
-    out_dir : str, optional
-        Directory where PNG files will be saved (defaults to current
-        working directory).
+    sensor_a : numpy.ndarray
+        Temperature readings from sensor A, shape (200,).
+    sensor_b : numpy.ndarray
+        Temperature readings from sensor B, shape (200,).
+    ax : matplotlib.axes.Axes
+        Axes object to draw the plot on.
 
     Returns
     -------
     None
-        Figures are written to disk as PNG files: ``scatter.png``,
-        ``histogram.png``, and ``boxplot.png`` in ``out_dir``.
     """
-    import os
-    import matplotlib.pyplot as plt
-
-    os.makedirs(out_dir, exist_ok=True)
-
-    sensor_a, sensor_b, timestamps = generate_data(seed)
-
-    # Scatter plot
-    fig1, ax1 = plt.subplots(figsize=(10, 4))
-    plot_scatter(ax1, timestamps, sensor_a, sensor_b)
-    scatter_path = os.path.join(out_dir, 'scatter.png')
-    fig1.tight_layout()
-    fig1.savefig(scatter_path, dpi=150)
-    plt.close(fig1)
-
-    # Histogram
-    fig2, ax2 = plt.subplots(figsize=(8, 4))
-    plot_histogram(ax2, sensor_a, sensor_b, bins=30)
-    hist_path = os.path.join(out_dir, 'histogram.png')
-    fig2.tight_layout()
-    fig2.savefig(hist_path, dpi=150)
-    plt.close(fig2)
-
-    # Boxplot
-    fig3, ax3 = plt.subplots(figsize=(6, 5))
-    overall_mean = np.nanmean(np.concatenate([sensor_a, sensor_b]))
-    bp = ax3.boxplot([sensor_a, sensor_b],
-                     labels=['Sensor A', 'Sensor B'],
-                     widths=0.6,
-                     patch_artist=True,
-                     boxprops=dict(facecolor='lightblue', color='blue'),
-                     medianprops=dict(color='red'))
-    ax3.set_ylabel('Temperature (deg C)')
-    ax3.set_title('Sensor Temperature Comparison')
-    ax3.axhline(overall_mean, color='gray', linestyle='--', linewidth=1.5,
-                label=f'Overall mean ({overall_mean:.2f} °C)')
-    ax3.legend()
-    box_path = os.path.join(out_dir, 'boxplot.png')
-    fig3.tight_layout()
-    fig3.savefig(box_path, dpi=150)
-    plt.close(fig3)
-
-    print(f"Wrote: {scatter_path}, {hist_path}, {box_path}")
+    overall_mean = np.concatenate([sensor_a, sensor_b]).mean()
+    ax.boxplot([sensor_a, sensor_b], tick_labels=['Sensor A', 'Sensor B'], widths=0.6, patch_artist=True,
+               boxprops=dict(facecolor='lightblue', color='blue'),
+               medianprops=dict(color='red'))
+    ax.set_ylabel('Temperature (deg C)')
+    ax.set_title('Sensor Temperature Comparison')
+    ax.axhline(overall_mean, color='gray', linestyle='--', linewidth=1.5, label=f'Overall mean ({overall_mean:.2f} deg C)')
+    ax.legend()
+    ax.grid(axis='y', alpha=0.3)
 
 
-if __name__ == "__main__":
+def main():
+    """Generate sensor data and save all three plots as sensor_analysis.png.
+
+    Returns
+    -------
+    None
+    """
+    sensor_a, sensor_b, timestamps = generate_data(seed=1522)
+    fig, axes = plt.subplots(1, 3, figsize=(15, 5))
+    plot_scatter(sensor_a, sensor_b, timestamps, axes[0])
+    plot_histogram(sensor_a, sensor_b, axes[1])
+    plot_boxplot(sensor_a, sensor_b, axes[2])
+    plt.tight_layout()
+    plt.savefig('sensor_analysis.png', dpi=150, bbox_inches='tight')
+    print('Saved sensor_analysis.png')
+
+
+if __name__ == '__main__':
     main()
