@@ -136,17 +136,68 @@ def plot_histogram(ax, sensor_a, sensor_b, bins=30):
     return None
 
 
-if __name__ == "__main__":
-    # quick sanity check when run as a script
-    a, b, ts = generate_data(1522)
+def main(seed: int = 1522, out_dir: str = '.'):
+    """Generate data and produce the three plot PNG files.
+
+    Parameters
+    ----------
+    seed : int, optional
+        Random seed passed to :func:`generate_data` for reproducibility
+        (default is 1522).
+    out_dir : str, optional
+        Directory where PNG files will be saved (defaults to current
+        working directory).
+
+    Returns
+    -------
+    None
+        Figures are written to disk as PNG files: ``scatter.png``,
+        ``histogram.png``, and ``boxplot.png`` in ``out_dir``.
+    """
+    import os
     import matplotlib.pyplot as plt
 
-    fig, ax = plt.subplots(figsize=(10, 4))
-    plot_scatter(ax, ts, a, b)
+    os.makedirs(out_dir, exist_ok=True)
 
-    # show histogram as well
+    sensor_a, sensor_b, timestamps = generate_data(seed)
+
+    # Scatter plot
+    fig1, ax1 = plt.subplots(figsize=(10, 4))
+    plot_scatter(ax1, timestamps, sensor_a, sensor_b)
+    scatter_path = os.path.join(out_dir, 'scatter.png')
+    fig1.tight_layout()
+    fig1.savefig(scatter_path, dpi=150)
+    plt.close(fig1)
+
+    # Histogram
     fig2, ax2 = plt.subplots(figsize=(8, 4))
-    plot_histogram(ax2, a, b, bins=30)
+    plot_histogram(ax2, sensor_a, sensor_b, bins=30)
+    hist_path = os.path.join(out_dir, 'histogram.png')
+    fig2.tight_layout()
+    fig2.savefig(hist_path, dpi=150)
+    plt.close(fig2)
 
-    plt.tight_layout()
-    plt.show()
+    # Boxplot
+    fig3, ax3 = plt.subplots(figsize=(6, 5))
+    overall_mean = np.nanmean(np.concatenate([sensor_a, sensor_b]))
+    bp = ax3.boxplot([sensor_a, sensor_b],
+                     labels=['Sensor A', 'Sensor B'],
+                     widths=0.6,
+                     patch_artist=True,
+                     boxprops=dict(facecolor='lightblue', color='blue'),
+                     medianprops=dict(color='red'))
+    ax3.set_ylabel('Temperature (deg C)')
+    ax3.set_title('Sensor Temperature Comparison')
+    ax3.axhline(overall_mean, color='gray', linestyle='--', linewidth=1.5,
+                label=f'Overall mean ({overall_mean:.2f} °C)')
+    ax3.legend()
+    box_path = os.path.join(out_dir, 'boxplot.png')
+    fig3.tight_layout()
+    fig3.savefig(box_path, dpi=150)
+    plt.close(fig3)
+
+    print(f"Wrote: {scatter_path}, {hist_path}, {box_path}")
+
+
+if __name__ == "__main__":
+    main()
